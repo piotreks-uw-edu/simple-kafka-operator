@@ -1,4 +1,5 @@
 import sys, os
+from datetime import datetime
 from confluent_kafka import Producer
 
 # Load environment variables for Kafka configuration
@@ -6,7 +7,7 @@ bootstrap_servers = os.environ.get('BOOTSTAP_SERVERS')
 security_protocol = os.environ.get('SECURITY_PROTOCOL')
 sasl_mechanism = os.environ.get('SASL_MECHANISM')
 sasl_username = os.environ.get('SASL_USERNAME')
-client_id = os.environ.get('piotreks')
+client_id = os.environ.get('CLIENT_ID')
 shared_access_key = os.environ.get('SHARED_ACCESS_KEY')
 sasl_password=f"Endpoint=sb://{bootstrap_servers}/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey={shared_access_key}"
 topic = os.environ.get('TOPIC')
@@ -34,9 +35,12 @@ if __name__ == "__main__":
     for i in range(0,100):
         key = "even" if i%2 == 0 else "odd"
         try:
-            p.produce(topic, str(i), callback=deliver_callback, key=key)
+            message = str(i) + ' ' + datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            p.produce(topic, message, callback=deliver_callback, key=key)
         except BufferError as e:
             sys.stderr.write(f'Local Producer queue full ({len(p)} messages awaiting delivery) try again\n')
+
+        # the call will return immediately without blocking
         p.poll(0)
 
     sys.stderr.write(f'Waiting for {len(p)} deliveries\n')
